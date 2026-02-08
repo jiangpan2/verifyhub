@@ -1,30 +1,23 @@
-name: 编译Swift动态库dylib
+name: BuildSwiftDylib
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    # 官方免费Mac电脑，自带完整Xcode/Swift/SDK，彻底解决你本地缺环境的问题
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
-      - name: 拉取仓库源码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 安装Theos编译环境
+      - name: 原生Xcode编译
+        run: xcodebuild build -project *.xcodeproj -configuration Release -arch arm64 -sdk iphoneos clean build
+
+      - name: 提取dylib文件
         run: |
-          git clone https://github.com/theos/theos.git ~/theos
-          curl -L https://github.com/xybp888/iOS-SDKs/releases/download/latest/iOSSDKs.tar.xz | tar -xJ -C ~/theos/sdks
-          echo "THEOS=~/theos" >> $GITHUB_ENV
+          mkdir out
+          find . -name "*.dylib" -type f -exec cp {} out/ \;
+          find ~/Library/Developer/Xcode/DerivedData -name "*.dylib" -type f -exec cp {} out/ \;
 
-      - name: 编译生成dylib动态库
-        run: |
-          make clean
-          make package FINALPACKAGE=1
-
-      - name: 上传编译成品（dylib+deb）
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: verifyhub-dylib
-          path: |
-            .theos/obj/*.dylib
-            packages/*.deb
+          name: MyDylib
+          path: out/
