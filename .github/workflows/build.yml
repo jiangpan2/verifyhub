@@ -1,23 +1,23 @@
-name: BuildSwiftDylib
+name: SwiftTweakBuild
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
-
-      - name: 原生Xcode编译
-        run: xcodebuild build -project *.xcodeproj -configuration Release -arch arm64 -sdk iphoneos clean build
-
-      - name: 提取dylib文件
+      
+      - name: 最简编译
         run: |
-          mkdir out
-          find . -name "*.dylib" -type f -exec cp {} out/ \;
-          find ~/Library/Developer/Xcode/DerivedData -name "*.dylib" -type f -exec cp {} out/ \;
-
-      - uses: actions/upload-artifact@v4
+          brew install theos
+          make clean
+          make package
+      
+      - name: 提取文件
+        uses: actions/upload-artifact@v4
         with:
-          name: MyDylib
-          path: out/
+          name: dylib-deb
+          path: |
+            packages/*.deb
+            .theos/obj/*.dylib
